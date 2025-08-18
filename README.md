@@ -1,6 +1,6 @@
 # Example Petstore REST Services with Connexion 3
 
-Example petstore REST implementation with Connexion 3 AsyncApp, Sqlalchemy, and Marshmellow
+Example petstore REST implementation with Connexion 3 AsyncApp, Sqlalchemy, and Marshmallow
 
 ## Installation
 
