@@ -32,22 +32,21 @@ pip install -r requirements.txt
 
 ## How to Test the Example Application
 
-**Before run the example application, make sure you have activated the virtual enviroment.**
-
-
 ```bash
-pytest tests/
+tox
 ```
 
-Or, you can run a local HTTP application like this:
+**Before running the example application, make sure you have activated the virtual enviroment.**
+
+You can run a local HTTP application like this:
 
 ```bash
 python app.py
 ```
 
-The application will run on http://127.0.0.1:8080.
+The application will listen on http://127.0.0.1:8080.
 
-Use this to see the swagger documentation  http://127.0.0.1:8080/api/v3/docs/
+Use this link to see the swagger documentation  http://127.0.0.1:8080/api/v3/docs/
 
 ## License
 
