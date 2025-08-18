@@ -3,7 +3,7 @@ info:
   title: Connexion Petstore - OpenAPI 3.0
   description: |-
     This is modified version of the sample Pet Store Server based on the OpenAPI 3.0 specification.
-    This implements a set of simplified petstore REST services using Connexion 3, AsyncApp, Sqlalchemy, and Marshmellow
+    This implements a set of simplified petstore REST services using Connexion 3, AsyncApp, Sqlalchemy, and Marshmallow
 
     Some useful links:
     - [The Connexion Pet Store repository](https://github.com/johnbyrne7/c3petstore)
