@@ -36,7 +36,7 @@ async def test_get_order_by_id(client, make_orders):
     get_res = client.get(f"/api/v3/orders/{order_id}")
     assert get_res.status_code == 200
     assert get_res.json()["quantity"] == 4
-    assert get_res.json()["status"] == "placed"
+    assert get_res.json()["status"] == make_orders[0].status
 
     get_res = client.get(f"/api/v3/orders/0")
     assert get_res.status_code == 404
@@ -90,16 +90,16 @@ async def test_get_orders_by_petid(client, make_orders):
     get_res = client.get(f"/api/v3/orders/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 1
-    assert get_res.json()[0]["quantity"] == 4
+    assert get_res.json()[0]["quantity"] == make_orders[0].quantity
 
 
 @pytest.mark.anyio
 async def test_get_orders_by_status(client, make_orders):
-    params = {"status": "placed"}
+    params = {"status": make_orders[0].status}
     get_res = client.get(f"/api/v3/orders/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 1
-    assert get_res.json()[0]["quantity"] == 4
+    assert get_res.json()[0]["quantity"] == make_orders[0].status
 
     params = {"status": "approvedxx"}
     get_res = client.get(f"/api/v3/orders/", params=params)
