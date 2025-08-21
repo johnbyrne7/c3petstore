@@ -203,4 +203,4 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Macos
-# .DS_Store
+.DS_Store

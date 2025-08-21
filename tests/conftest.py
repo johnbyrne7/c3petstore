@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError
 from app import create_app
 from contextlib import asynccontextmanager
 
-from models.entities import Pet
+from models.entities import Pet, Order
 
 TEST_CONFIG = {
     "TESTING": True,
@@ -111,15 +111,32 @@ async def client(app, db_session):
 async def make_pets(app):
     async with app.middleware.options.SessionLocal() as session:
         initial_data = [
-            Pet(name="Whiskers", status="available"),
-            Pet(name="Bark", status="sold"),
+            Pet(name="bark", status="sold"),
+            Pet(name="whiskers", status="available"),
         ]
         for item in initial_data:
-            session.add(item)
+            item = session.add(item)
+            await session.flush()
 
-        await session.commit()
+        yield initial_data
+        await session.rollback()
         await session.close()
-        yield
+
+
+@pytest.fixture(scope="module")
+async def make_orders(app, make_pets):
+    async with app.middleware.options.SessionLocal() as session:
+        initial_data = [
+            Order(quantity=4, status="placed", pet_id=make_pets[0].id),
+            Order(quantity=1, status="delivered", pet_id=make_pets[1].id),
+        ]
+        for item in initial_data:
+            item = session.add(item)
+            await session.flush()
+
+        yield initial_data
+        await session.rollback()
+        await session.close()
 
 
 async def init_db(engine):

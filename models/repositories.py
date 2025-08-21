@@ -24,7 +24,7 @@ class PetRepo:
 
     @staticmethod
     async def fetchAll(session: AsyncSession, conditions=None) -> Sequence["Pet"]:
-        stmt = sql.select(Pet)
+        stmt = sql.select(Pet).order_by(Pet.name)
         if conditions:
             stmt = stmt.filter_by(**conditions)
         result = await session.execute(stmt)
@@ -75,7 +75,7 @@ class OrderRepo:
 
     @staticmethod
     async def fetchAll(session: AsyncSession, conditions=None) -> Sequence["Order"]:
-        stmt = sql.select(Order)
+        stmt = sql.select(Order).order_by(Order.pet_id)
         if conditions:
             stmt = stmt.filter_by(**conditions)
         result = await session.execute(stmt)

@@ -18,14 +18,14 @@ async def get(_id):
 
 async def add(body):
     async with get_session() as session:
-        data = OrderSchema().load(body)
-        pet = await PetRepo.fetchById(session, data["pet_id"])
-        #  validate pet_id
-        if not pet:
-            return format_errors_return(
-                f"Invalid petId: Pet {data['pet_id']} does not exist", status=400
-            )
         try:
+            data = OrderSchema().load(body)
+            pet = await PetRepo.fetchById(session, data["pet_id"])
+            #  validate pet_id
+            if not pet:
+                return format_errors_return(
+                    f"Invalid petId: Pet {data['pet_id']} does not exist", status=400
+                )
             order = await OrderRepo.create(session, data)
             await session.commit()
             return OrderSchema().dump(order), 201

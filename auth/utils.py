@@ -1,4 +1,4 @@
-# dummy authorization functions 
+# dummy authorization functions
 
 from werkzeug.exceptions import Unauthorized
 

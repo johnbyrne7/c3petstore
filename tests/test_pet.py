@@ -3,93 +3,59 @@ import pytest
 
 @pytest.mark.anyio
 async def test_add_pet(client):
-    pet = {"name": "doggie", "status": "available"}
-
-    response = client.post("/api/v3/pets", json=pet)
-    assert response.status_code == 201
-    data = response.json()
-    assert data["name"] == "doggie"
-    assert data["status"] == "available"
+    data = {"name": "doggie", "status": "available"}
+    post_res = client.post("/api/v3/pets", json=data)
+    assert post_res.status_code == 201
+    assert post_res.json()["name"] == "doggie"
+    assert post_res.json()["status"] == "available"
 
 
 @pytest.mark.anyio
-async def test_get_pet_by_id(client):
-    # First, add a pet
-    new_pet = {"name": "whiskers"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-    pet_id = post_res.json()["id"]
-
-    get_res = client.get(f"/api/v3/pets/{pet_id}")
+async def test_get_pet_by_id(client, make_pets):
+    get_res = client.get(f"/api/v3/pets/{make_pets[0].id}")
     assert get_res.status_code == 200
-    assert get_res.json()["name"] == "whiskers"
-    assert get_res.json()["status"] == "available"
+    assert get_res.json()["name"] == make_pets[0].name
+    assert get_res.json()["status"] == make_pets[0].status
 
+
+@pytest.mark.anyio
+async def test_get_pet_bad_id(client, make_pets):
     get_res = client.get(f"/api/v3/pets/0")
     assert get_res.status_code == 404
 
 
 @pytest.mark.anyio
-async def test_update_pet(client):
-    # First, add a pet
-    new_pet = {"name": "whiskers", "status": "pending"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    pet_id = post_res.json()["id"]
-
-    data = {"name": "whiskers_changed"}
-    get_res = client.put(f"/api/v3/pets/{pet_id}", json=data)
-    assert get_res.status_code == 200
-    assert get_res.json()["name"] == "whiskers_changed"
-
-    get_res = client.get(f"/api/v3/pets/{pet_id}")
-    assert get_res.status_code == 200
-    assert get_res.json()["name"] == "whiskers_changed"
-
-    data = {"status": "sold"}
+async def test_update_pet(client, make_pets):
+    pet_id = make_pets[0].id
+    data = {"name": "whiskers_changed", "status": "sold"}
     put_res = client.put(f"/api/v3/pets/{pet_id}", json=data)
     assert put_res.status_code == 200
+    assert put_res.json()["name"] == "whiskers_changed"
     assert put_res.json()["status"] == "sold"
 
+    # confirm
     get_res = client.get(f"/api/v3/pets/{pet_id}")
     assert get_res.status_code == 200
+    assert get_res.json()["name"] == "whiskers_changed"
     assert get_res.json()["status"] == "sold"
 
 
 @pytest.mark.anyio
-async def test_get_pets(client):
-    # First, add a pet
-    new_pet = {"name": "whiskers", "status": "pending"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-
-    # Add a second pet
-    new_pet = {"name": "whiskers2", "status": "pending"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-
+async def test_get_pets(client, make_pets):
     get_res = client.get(f"/api/v3/pets/")
     assert get_res.status_code == 200
     assert len(get_res.json()) == 2
-    assert get_res.json()[0]["name"] == "whiskers"
+    assert get_res.json()[0]["name"] == make_pets[0].name
 
 
 @pytest.mark.anyio
-async def test_get_pets_by_status(client):
-    # First, add a pet
-    new_pet = {"name": "whiskers", "status": "pending"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-
-    # Add a second pet
-    new_pet = {"name": "whiskers2", "status": "sold"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-
-    params = {"status": "pending"}
+async def test_get_pets_by_status(client, make_pets):
+    params = {"status": make_pets[0].status}
     get_res = client.get(f"/api/v3/pets/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 1
-    assert get_res.json()[0]["name"] == "whiskers"
+    assert get_res.json()[0]["status"] == make_pets[0].status
+    assert get_res.json()[0]["name"] == make_pets[0].name
 
     params = {"status": "pendingxx"}
     get_res = client.get(f"/api/v3/pets/", params=params)
@@ -98,21 +64,12 @@ async def test_get_pets_by_status(client):
 
 
 @pytest.mark.anyio
-async def test_get_pets_by_name(client):
-    # First, add a pet
-    new_pet = {"name": "whiskers1233H", "status": "pending"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-    # Add a second pet
-    new_pet = {"name": "whiskers2", "status": "pending"}
-    post_res = client.post("/api/v3/pets", json=new_pet)
-    assert post_res.status_code == 201
-
-    params = {"name": "whiskers1233H"}
+async def test_get_pets_by_name(client, make_pets):
+    params = {"name": make_pets[0].name}
     get_res = client.get(f"/api/v3/pets/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 1
-    assert get_res.json()[0]["name"] == "whiskers1233H"
+    assert get_res.json()[0]["name"] == make_pets[0].name
 
     params = {"status": "whiskers1233Hxx"}
     get_res = client.get(f"/api/v3/pets/", params=params)
@@ -121,13 +78,8 @@ async def test_get_pets_by_name(client):
 
 
 @pytest.mark.anyio
-async def test_delete_pet(client):
-    new_pet = {
-        "name": "delete_me",
-    }
-    res = client.post("/api/v3/pets", json=new_pet)
-    pet_id = res.json()["id"]
-
+async def test_delete_pet(client, make_pets):
+    pet_id = make_pets[0].id
     del_res = client.delete(f"/api/v3/pets/{pet_id}")
     assert del_res.status_code == 204
 

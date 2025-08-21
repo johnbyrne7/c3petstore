@@ -47,7 +47,12 @@ async def get_session():
 
 def create_app(override_settings: Optional[Dict] = None):
     options = SwaggerUIOptions(swagger_ui_path="/docs")
-    app = AsyncApp(__name__, specification_dir="./", lifespan=lifespan_handler, swagger_ui_options=options)
+    app = AsyncApp(
+        __name__,
+        specification_dir="./",
+        lifespan=lifespan_handler,
+        swagger_ui_options=options,
+    )
     config = deepcopy(base_config)
     config.update(dict_from_module(settings))
     if override_settings:
