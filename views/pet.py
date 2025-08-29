@@ -13,16 +13,20 @@ async def get(_id):
         pet = await PetRepo.fetchById(session, _id)
         if not pet:
             return format_errors_return("Pet not found", status=404)
-        return PetSchema().dump(pet), 200
+        schema = PetSchema()
+        return schema.dump(pet), 200
 
 
 async def add(body):
     async with get_session() as session:
+        schema = (
+            PetSchema()
+        )  # This is where you could add 'context' to schema if needed
         try:
-            data = PetSchema().load(body)
+            data = schema.load(body)
             pet = await PetRepo.create(session, data)
             await session.commit()
-            return PetSchema().dump(pet), 201
+            return schema.dump(pet), 201
         except ValidationError as err:
             return format_errors_return(err.messages, 400)
 
@@ -32,11 +36,13 @@ async def update(_id, body):
         pet = await PetRepo.fetchById(session, _id)
         if not pet:
             return format_errors_return("Pet not found", status=404)
+        schema = PetSchema()
         try:
-            data = PetSchema().load(body, instance=pet, partial=True)
+            # Pass instance in case validations need current attributes
+            data = schema.load(body, instance=pet, partial=True)
             pet = await PetRepo.update(session, data, pet)
             await session.commit()
-            return PetSchema().dump(pet), 200
+            return schema.dump(pet), 200
         except ValidationError as err:
             return format_errors_return(err.messages, 400)
 

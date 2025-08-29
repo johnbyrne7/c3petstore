@@ -6,13 +6,19 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from .entities import Pet, Order
+from .entities import Base, Pet, Order
+
+
+def dictToModel(dict: Dict, model):
+    for key, value in dict.items():
+        setattr(model, key, value)
+    return model
 
 
 class PetRepo:
     @staticmethod
     async def create(session: AsyncSession, data: Dict) -> "Pet":
-        pet = Pet(**data)
+        pet = dictToModel(data, Pet())
         session.add(pet)
         return pet
 
@@ -50,8 +56,7 @@ class PetRepo:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Pet not found"
                 )
-        for field, value in updated_data.items():
-            setattr(pet, field, value)
+        pet = dictToModel(updated_data, pet)
         return pet
 
     @staticmethod
@@ -63,7 +68,7 @@ class PetRepo:
 class OrderRepo:
     @staticmethod
     async def create(session: AsyncSession, data: Dict) -> "Order":
-        order = Order(**data)
+        order = dictToModel(data, Order())
         session.add(order)
         return order
 
@@ -103,8 +108,7 @@ class OrderRepo:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
                 )
-        for field, value in updated_data.items():
-            setattr(order, field, value)
+        dictToModel(updated_data, order)
         return order
 
     @staticmethod

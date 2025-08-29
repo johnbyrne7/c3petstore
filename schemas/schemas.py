@@ -12,6 +12,7 @@ class PetSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Pet
         unknown = INCLUDE
+        load_instance = False
 
 
 class OrderSchema(SQLAlchemyAutoSchema):
@@ -41,3 +42,4 @@ class OrderSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Order
         unknown = INCLUDE
+        load_instance = False

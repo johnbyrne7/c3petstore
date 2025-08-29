@@ -99,7 +99,7 @@ async def test_get_orders_by_status(client, make_orders):
     get_res = client.get(f"/api/v3/orders/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 1
-    assert get_res.json()[0]["quantity"] == make_orders[0].status
+    assert get_res.json()[0]["status"] == make_orders[0].status
 
     params = {"status": "approvedxx"}
     get_res = client.get(f"/api/v3/orders/", params=params)
