@@ -11,6 +11,14 @@ async def test_add_pet(client):
 
 
 @pytest.mark.anyio
+async def test_add_pet_validations(client):
+    data = {"status": "available"}
+    post_res = client.post("/api/v3/pets", json=data)
+    assert post_res.status_code == 400
+    assert "name' is a required property" in post_res.json()["detail"]
+
+
+@pytest.mark.anyio
 async def test_get_pet_by_id(client, make_pets):
     get_res = client.get(f"/api/v3/pets/{make_pets[0].id}")
     assert get_res.status_code == 200

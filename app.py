@@ -3,12 +3,13 @@ from copy import deepcopy
 from contextlib import asynccontextmanager
 
 from connexion.options import SwaggerUIOptions
+import logging.config
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     AsyncSession,
     async_sessionmaker,
-    AsyncEngine,
 )
+from sqlalchemy.exc import OperationalError
 from connexion import AsyncApp, ConnexionMiddleware, request
 
 import settings
@@ -46,25 +47,38 @@ async def get_session():
 
 
 def create_app(override_settings: Optional[Dict] = None):
-    options = SwaggerUIOptions(swagger_ui_path="/docs")
-    app = AsyncApp(
-        __name__,
-        specification_dir="./",
-        lifespan=lifespan_handler,
-        swagger_ui_options=options,
-    )
     config = deepcopy(base_config)
+    #  Errors in settings.py may not be logged, as we want to get logging config from settings
     config.update(dict_from_module(settings))
     if override_settings:
         config.update(override_settings)
-    app.add_api(config["specification"], async_=True, swagger_ui_options=options)
-    # Put config in connexion middleware options temporarily
-    app.middleware.options.config = config
-    engine = create_async_engine(config.get("DATABASE_URL"), echo=False)
-    app.middleware.options.SessionLocal = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    # Initialize logging
+    logging.config.dictConfig(config["LOGGING_CONFIG"])
+    logger = logging.getLogger("app")
+    try:
+        logger.info("Creating Petstore App")
+        options = SwaggerUIOptions(swagger_ui_path="/docs")
+        app = AsyncApp(
+            __name__,
+            specification_dir="./",
+            lifespan=lifespan_handler,
+            swagger_ui_options=options,
+        )
 
+        app.add_api(config["specification"], async_=True, swagger_ui_options=options)
+        # Put config in connexion middleware options temporarily
+        app.middleware.options.config = config
+        try:
+            engine = create_async_engine(config.get("DATABASE_URL"), echo=False)
+            app.middleware.options.SessionLocal = async_sessionmaker(
+                bind=engine, class_=AsyncSession, expire_on_commit=False
+            )
+        except Exception as e:
+            logger.error(f"Failed to connect to database: {str(e)}")
+            raise RuntimeError(f"Database connection failed: {str(e)}")
+    except Exception as e:
+        logger.error(f"Failed to create Connexion app: {str(e)}")
+        raise RuntimeError(f"Connexion app create failed: {str(e)}")
     return app
 
 
@@ -78,4 +92,6 @@ def dict_from_module(module):
 
 if __name__ == "__main__":
     app = create_app()
+    logger = logging.getLogger("app")
+    logger.info("Running application on port 8080")
     app.run(port=8080)

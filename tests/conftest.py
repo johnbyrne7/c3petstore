@@ -1,18 +1,81 @@
 import httpx
 import pytest
-import sqlalchemy
 from connexion import request
 from sqlalchemy.exc import OperationalError
+from unittest.mock import patch, MagicMock
+
 
 from app import create_app
 from contextlib import asynccontextmanager
 
 from models.entities import Pet, Order
 
+
+TEST_LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "pytest_file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "standard",
+            "filename": "logs/pytest.log",
+            "maxBytes": 10485760,
+            "backupCount": 5,
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "standard",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "loggers": {
+        "": {  # Root logger
+            "level": "DEBUG",
+            "handlers": ["pytest_file_handler", "console"],
+            "propagate": True,
+        },
+        "connexion": {
+            "level": "INFO",
+            "handlers": ["pytest_file_handler"],
+            "propagate": False,
+        },
+        "app": {
+            "level": "INFO",
+            "handlers": ["pytest_file_handler", "console"],
+            "propagate": True,
+        },
+        "uvicorn": {
+            "level": "INFO",
+            "handlers": ["pytest_file_handler"],
+            "propagate": False,
+        },
+        "aiosqlite": {  # Suppress noisy aiosqlite logs
+            "level": "WARNING",
+            "handlers": ["pytest_file_handler"],
+            "propagate": False,
+        },
+        "httpx": {  # Suppress httpx logs to reduce caplog noise
+            "level": "WARNING",
+            "handlers": ["pytest_file_handler"],
+            "propagate": False,
+        },
+    },
+}
+
+
 TEST_CONFIG = {
     "TESTING": True,
     "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
     "SECRET_KEY": "test-secret-key",
+    "LOGGING_CONFIG": TEST_LOGGING_CONFIG,
 }
 
 test_sessions = {}
@@ -99,12 +162,20 @@ async def client(app, db_session):
     with app.test_client() as client:  # connexion synchronous TestClient.
         client.headers.update(
             {
-                "Authorization": "Bearer Test JWT token",
+                "Authorization": "Bearer TestJWTtoken",
                 "Content-type": "application/json",
                 "session_id": str(id(db_session)),
             }
         )
         yield client
+
+
+@pytest.fixture(scope="function")
+async def bad_session(app, db_session):
+    # invalidate this session
+    mock_connection = MagicMock()
+    test_sessions[str(id(db_session))] = mock_connection
+    yield db_session
 
 
 @pytest.fixture(scope="module")

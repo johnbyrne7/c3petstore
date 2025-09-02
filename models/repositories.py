@@ -2,6 +2,7 @@ from typing import Optional, Dict
 
 from sqlalchemy import sql, Sequence, Select
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.exc import OperationalError
 
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -27,6 +28,9 @@ class PetRepo:
         stmt = sql.select(Pet).where(Pet.id == id)
         result = await session.execute(stmt)
         return result.scalars().first()
+
+    # except OperationalError as e:
+    # raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     @staticmethod
     async def fetchAll(session: AsyncSession, conditions=None) -> Sequence["Pet"]:

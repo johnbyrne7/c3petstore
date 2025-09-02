@@ -23,7 +23,8 @@ class Order(Base):
     quantity = Column(Integer)
     ship_date = Column(
         DateTime(timezone=True),
-        default=datetime.datetime.utcnow() + datetime.timedelta(days=7),
+        default=datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(days=7),
     )
     status = Column(String, default="placed")
     complete = Column(Boolean)
