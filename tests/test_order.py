@@ -83,6 +83,11 @@ async def test_get_orders(client, make_orders):
     assert get_res.status_code == 200
     assert len(get_res.json()) == 2
 
+    params = {"limit": 1}
+    get_res = client.get(f"/api/v3/orders/", params=params)
+    assert get_res.status_code == 200
+    assert len(get_res.json()) == 1
+
 
 @pytest.mark.anyio
 async def test_get_orders_by_petid(client, make_orders):
@@ -103,8 +108,8 @@ async def test_get_orders_by_status(client, make_orders):
 
     params = {"status": "approvedxx"}
     get_res = client.get(f"/api/v3/orders/", params=params)
-    assert get_res.status_code == 200
-    assert len(get_res.json()) == 0
+    assert get_res.status_code == 400
+    assert "'approvedxx' is not one of" in str(get_res.json()["detail"])
 
 
 @pytest.mark.anyio

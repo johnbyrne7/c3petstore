@@ -33,8 +33,10 @@ class PetRepo:
     # raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     @staticmethod
-    async def fetchAll(session: AsyncSession, conditions=None) -> Sequence["Pet"]:
-        stmt = sql.select(Pet).order_by(Pet.name)
+    async def fetchAll(
+        session: AsyncSession, conditions=None, limit=10, offset=0
+    ) -> Sequence["Pet"]:
+        stmt = sql.select(Pet).order_by(Pet.name).limit(limit).offset(offset)
         if conditions:
             stmt = stmt.filter_by(**conditions)
         result = await session.execute(stmt)
@@ -83,8 +85,10 @@ class OrderRepo:
         return result.scalars().first()
 
     @staticmethod
-    async def fetchAll(session: AsyncSession, conditions=None) -> Sequence["Order"]:
-        stmt = sql.select(Order).order_by(Order.pet_id)
+    async def fetchAll(
+        session: AsyncSession, conditions=None, limit=10, offset=0
+    ) -> Sequence["Order"]:
+        stmt = sql.select(Order).order_by(Order.pet_id).limit(limit).offset(offset)
         if conditions:
             stmt = stmt.filter_by(**conditions)
         result = await session.execute(stmt)

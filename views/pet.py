@@ -93,16 +93,24 @@ async def delete(_id):
         raise ServerError
 
 
-async def find(status=None, name=None):
+async def find(status=None, name=None, offset=0, limit=10):
     logger.debug(f"Finding pets with status: {status}, name: {name}")
     try:
         async with get_session() as session:
+            if limit < 1 or limit > 100:
+                return format_errors_return(
+                    "Limit must be between 1 and 100", status=400
+                )
+            if offset < 0:
+                return format_errors_return("Offset must be non-negative", status=400)
             conditions = {}
             if status:
                 conditions["status"] = status
             if name:
                 conditions["name"] = name
-            pets = await PetRepo.fetchAll(session, conditions)
+            pets = await PetRepo.fetchAll(
+                session, conditions=conditions, limit=limit, offset=offset
+            )
             return PetSchema(many=True).dump(pets), 200
     except Exception as err:
         logger.error(

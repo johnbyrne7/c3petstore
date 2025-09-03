@@ -55,6 +55,11 @@ async def test_get_pets(client, make_pets):
     assert len(get_res.json()) == 2
     assert get_res.json()[0]["name"] == make_pets[0].name
 
+    params = {"limit": 1}
+    get_res = client.get(f"/api/v3/pets/", params=params)
+    assert get_res.status_code == 200
+    assert len(get_res.json()) == 1
+
 
 @pytest.mark.anyio
 async def test_get_pets_by_status(client, make_pets):
@@ -67,8 +72,8 @@ async def test_get_pets_by_status(client, make_pets):
 
     params = {"status": "pendingxx"}
     get_res = client.get(f"/api/v3/pets/", params=params)
-    assert get_res.status_code == 200
-    assert len(get_res.json()) == 0
+    assert get_res.status_code == 400
+    assert "'pendingxx' is not one of" in str(get_res.json()["detail"])
 
 
 @pytest.mark.anyio
@@ -79,7 +84,7 @@ async def test_get_pets_by_name(client, make_pets):
     assert len(get_res.json()) == 1
     assert get_res.json()[0]["name"] == make_pets[0].name
 
-    params = {"status": "whiskers1233Hxx"}
+    params = {"name": "whiskers1233Hxx"}
     get_res = client.get(f"/api/v3/pets/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 0

@@ -106,17 +106,25 @@ async def delete(_id):
         raise ServerError
 
 
-async def find(petId=None, status=None):
+async def find(petId=None, status=None, offset=0, limit=10):
     logger.debug(f"Finding orders with status: {status}, petId: {petId}")
     try:
         async with get_session() as session:
+            if limit < 1 or limit > 100:
+                return format_errors_return(
+                    "Limit must be between 1 and 100", status=400
+                )
+            if offset < 0:
+                return format_errors_return("Offset must be non-negative", status=400)
             schema = OrderSchema(many=True)
             conditions = {}
             if petId:
                 conditions["pet_id"] = petId
             if status:
                 conditions["status"] = status
-            orders = await OrderRepo.fetchAll(session, conditions)
+            orders = await OrderRepo.fetchAll(
+                session, conditions=conditions, limit=limit, offset=offset
+            )
             return schema.dump(orders), 200
     except Exception as err:
         logger.error(
