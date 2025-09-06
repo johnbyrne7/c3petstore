@@ -27,7 +27,9 @@ async def test_get_pet_logging(client, make_pets, caplog):
 
 
 @pytest.mark.anyio
-async def test_logged_database_exception(client, make_orders, bad_session, caplog):
+async def test_logged_database_exception(
+    client, make_pets, make_orders, bad_session, caplog
+):
     caplog.set_level(logging.ERROR, logger="app.pet")
     data = {"name": "doggie", "status": "available"}
     post_res = client.post("/api/v3/pets", json=data)
@@ -36,7 +38,7 @@ async def test_logged_database_exception(client, make_orders, bad_session, caplo
     assert "views/pet.py" not in post_res.text
     assert "views/pet.py" in caplog.text
 
-    pet_id = make_orders[0].pet_id
+    pet_id = make_pets[0].id
     data = {"name": "whiskers_changed", "status": "sold"}
     put_res = client.put(f"/api/v3/pets/{pet_id}", json=data)
     assert put_res.status_code == 500

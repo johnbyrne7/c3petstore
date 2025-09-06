@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.anyio
 async def test_add_pet(client):
-    data = {"name": "doggie", "status": "available"}
+    data = {"name": "doggie", "description": "Noisey", "status": "available"}
     post_res = client.post("/api/v3/pets", json=data)
     assert post_res.status_code == 201
     assert post_res.json()["name"] == "doggie"
@@ -23,6 +23,7 @@ async def test_get_pet_by_id(client, make_pets):
     get_res = client.get(f"/api/v3/pets/{make_pets[0].id}")
     assert get_res.status_code == 200
     assert get_res.json()["name"] == make_pets[0].name
+    assert get_res.json()["description"] == make_pets[0].description
     assert get_res.json()["status"] == make_pets[0].status
 
 
@@ -52,13 +53,18 @@ async def test_update_pet(client, make_pets):
 async def test_get_pets(client, make_pets):
     get_res = client.get(f"/api/v3/pets/")
     assert get_res.status_code == 200
-    assert len(get_res.json()) == 2
+    assert len(get_res.json()) == len(make_pets)
     assert get_res.json()[0]["name"] == make_pets[0].name
 
     params = {"limit": 1}
     get_res = client.get(f"/api/v3/pets/", params=params)
     assert get_res.status_code == 200
     assert len(get_res.json()) == 1
+
+    params = {"limit": 101, "offset": 0}
+    get_res = client.get(f"/api/v3/pets/", params=params)
+    assert get_res.status_code == 400
+    assert "is greater than the maximum of" in get_res.json()["detail"]
 
 
 @pytest.mark.anyio

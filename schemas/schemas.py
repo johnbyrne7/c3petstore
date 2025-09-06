@@ -1,9 +1,19 @@
 import datetime
 import pytz
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
-from marshmallow import INCLUDE, fields, post_dump, pre_load, ValidationError
+from marshmallow import INCLUDE, fields, post_dump, pre_load, ValidationError, Schema
 
 from models.entities import Pet, Order
+
+
+class OrderIds(Schema):
+    orderId = fields.Integer(attribute="order_id")
+    quantity = fields.Integer()
+
+
+class PetIds(Schema):
+    petId = fields.Integer(attribute="pet_id")
+    quantity = fields.Integer()
 
 
 class PetSchema(SQLAlchemyAutoSchema):
@@ -17,7 +27,18 @@ class PetSchema(SQLAlchemyAutoSchema):
 
 class OrderSchema(SQLAlchemyAutoSchema):
     id = auto_field(dump_only=True)
-    petId = fields.Integer(attribute="pet_id")
+
+    @post_dump(pass_original=True)
+    def retPetIds(self, data, original_data, **kwargs):
+        data["petIds"] = PetIds(many=True).dump(original_data.pet_ids)
+        return data
+
+    @pre_load
+    def setPetIds(self, in_data, **kwargs):
+        petIds = in_data.pop("petIds", [])
+        if petIds:
+            in_data["petIds"] = PetIds(many=True).load(petIds)
+        return in_data
 
     @post_dump(pass_original=True)
     def retDate(self, data, original_data, **kwargs):
@@ -43,3 +64,14 @@ class OrderSchema(SQLAlchemyAutoSchema):
         model = Order
         unknown = INCLUDE
         load_instance = False
+        exclude = (
+            "pet_ids",
+            "pets",
+        )
+
+
+class OrderPetSchema(OrderSchema):
+    @post_dump(pass_original=True)
+    def pets(self, data, original_data, **kwargs):
+        data["pets"] = PetSchema(many=True).dump(original_data.pets)
+        return data

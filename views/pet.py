@@ -4,8 +4,11 @@ from connexion import NoContent
 import logging
 from connexion.exceptions import ServerError
 from marshmallow import ValidationError
+from sqlalchemy import sql
+from sqlalchemy.orm import joinedload
 
-from models.entities import Pet
+from lib.utils import format_errors_return
+from models.entities import Pet, Order
 from models.repositories import PetRepo
 from schemas.schemas import PetSchema
 from app import get_session
@@ -64,6 +67,7 @@ async def update(_id, body):
             pet = await PetRepo.update(session, data, pet)
             await session.commit()
             logger.debug(f"Pet updated with id: {_id}")
+            pet = await PetRepo.fetchById(session, _id)  # get updated Pet from db
             return schema.dump(pet), 200
     except (ValidationError, Exception) as err:
         if isinstance(err, ValidationError):
@@ -97,29 +101,22 @@ async def find(status=None, name=None, offset=0, limit=10):
     logger.debug(f"Finding pets with status: {status}, name: {name}")
     try:
         async with get_session() as session:
-            if limit < 1 or limit > 100:
-                return format_errors_return(
-                    "Limit must be between 1 and 100", status=400
-                )
-            if offset < 0:
-                return format_errors_return("Offset must be non-negative", status=400)
+            # No need to validate limits as C3 does that
             conditions = {}
             if status:
                 conditions["status"] = status
             if name:
                 conditions["name"] = name
             pets = await PetRepo.fetchAll(
-                session, conditions=conditions, limit=limit, offset=offset
+                session,
+                conditions=conditions,
+                limit=limit,
+                offset=offset,
             )
-            return PetSchema(many=True).dump(pets), 200
+            schema = PetSchema(many=True)
+            return schema.dump(pets), 200
     except Exception as err:
         logger.error(
             f"Server error occurred Finding pets with status: {status}, name: {name}\n {str(err)}\n{traceback.format_exc()}"
         )
         raise ServerError
-
-
-def format_errors_return(
-    errors, status, *, title="Validation Errors", type="Data Errors"
-):
-    return dict(detail=errors, status=status, title=title, type=type), status

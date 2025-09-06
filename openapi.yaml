@@ -256,7 +256,7 @@ paths:
       parameters:
         - name: petId
           in: query
-          description: ID of pet for which to return orders
+          description:  Return orders that contain this petId
           required: false
           schema:
             type: integer
@@ -271,6 +271,12 @@ paths:
               - placed
               - approved
               - delivered
+        - name: includePets
+          in: query
+          description: Include full pet objects in the response.  default=no
+          required: false
+          schema:
+            type: string
         - name: limit
           in: query
           description: Maximum number of orders to return (default 10, maximum 100)
@@ -360,6 +366,12 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: includePets
+          in: query
+          description: Include full pet objects in the response.  default=no
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
@@ -396,6 +408,12 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: includePets
+          in: query
+          description: Include full pet objects in the response.  default=no
+          required: false
+          schema:
+            type: string
       requestBody:
         description: Update an existent order in the store
         content:
@@ -470,14 +488,29 @@ components:
           format: int64
           readOnly: true
           example: 10
-        petId:
-          type: integer
-          format: int64
-          example: 198772
-        quantity:
-          type: integer
-          format: int32
-          example: 7
+        petIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/PetInOrder'
+          minimum: 1
+          example:
+            - pet_id: 198772
+              quantity: 1
+            - pet_id: 19552
+              quantity: 3
+        pets:  #  Returned when includePets=yes
+          readOnly: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+          minimum: 1
+          example:
+            - id: 198772
+              name: doggie
+              status: available
+            - id: 198773
+              name: kitty
+              status: available
         shipDate:
           type: string
           format: date
@@ -499,8 +532,34 @@ components:
         - $ref: '#/components/schemas/Order'
         - type: object
           required:
-            - petId
-            - quantity
+            - petIds
+
+    PetInOrder:
+        type: object
+        properties:
+          petId:
+            type: integer
+            format: int64
+            example: 198773
+          quantity:
+            type: integer
+            format: int32
+            example: 1
+        required:
+          - petId
+          - quantity
+
+    OrderForPets:
+        type: object
+        properties:
+          orderId:
+            type: integer
+            format: int64
+            example: 198773
+          quantity:
+            type: integer
+            format: int32
+            example: 1
 
     Pet:
       type: object
@@ -513,6 +572,9 @@ components:
         name:
           type: string
           example: doggie
+        description:
+          type: string
+          example: very cute Jack Russell
         status:
           type: string
           description: pet status in the store

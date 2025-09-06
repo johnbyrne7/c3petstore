@@ -8,8 +8,7 @@ from unittest.mock import patch, MagicMock
 from app import create_app
 from contextlib import asynccontextmanager
 
-from models.entities import Pet, Order
-
+from models.entities import Pet, Order, OrderPet
 
 TEST_LOGGING_CONFIG = {
     "version": 1,
@@ -182,8 +181,9 @@ async def bad_session(app, db_session):
 async def make_pets(app):
     async with app.middleware.options.SessionLocal() as session:
         initial_data = [
-            Pet(name="bark", status="sold"),
-            Pet(name="whiskers", status="available"),
+            Pet(name="bark", description="Noisey", status="sold"),
+            Pet(name="whiskers", description="Furry", status="available"),
+            Pet(name="zebra", description="obvious", status="available"),
         ]
         for item in initial_data:
             item = session.add(item)
@@ -198,12 +198,19 @@ async def make_pets(app):
 async def make_orders(app, make_pets):
     async with app.middleware.options.SessionLocal() as session:
         initial_data = [
-            Order(quantity=4, status="placed", pet_id=make_pets[0].id),
-            Order(quantity=1, status="delivered", pet_id=make_pets[1].id),
+            Order(status="placed"),
+            Order(status="delivered"),
         ]
+        i = 0
         for item in initial_data:
             item = session.add(item)
             await session.flush()
+            op = OrderPet(
+                order_id=initial_data[i].id, pet_id=make_pets[i].id, quantity=i + 1
+            )
+            op = session.add(op)
+            await session.flush()
+            i += 1
 
         yield initial_data
         await session.rollback()
