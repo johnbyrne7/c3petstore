@@ -3,14 +3,14 @@ from typing import Optional, Dict, List
 
 from sqlalchemy import sql, Sequence, Select
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import joinedload
 
 from starlette import status
 from starlette.exceptions import HTTPException
 
 from .entities import Base, Pet, Order, OrderPet
-from lib.utils import dictToModel, PetInOrderDict
+from lib.utils import dictToModel
+from .types import PetInOrderDict
 
 
 class PetRepo:
@@ -43,14 +43,6 @@ class PetRepo:
         return result.unique().scalars().all()
 
     @staticmethod
-    async def delete(session: AsyncSession, id: int, pet: Optional[Pet] = None) -> None:
-        if pet:
-            await session.delete(pet)
-        else:
-            stmt = sql.delete(Pet).where(Pet.id == id)
-            await session.execute(stmt)
-
-    @staticmethod
     async def update(
         session: AsyncSession, updated_data: Dict, pet: Optional[Pet] = None
     ) -> "Pet":
@@ -64,6 +56,14 @@ class PetRepo:
                 )
         pet = dictToModel(updated_data, pet)
         return pet
+
+    @staticmethod
+    async def delete(session: AsyncSession, id: int, pet: Optional[Pet] = None) -> None:
+        if pet:
+            await session.delete(pet)
+        else:
+            stmt = sql.delete(Pet).where(Pet.id == id)
+            await session.execute(stmt)
 
     @staticmethod
     async def getSelect(session: AsyncSession) -> Select:
@@ -120,16 +120,6 @@ class OrderRepo:
         return result.unique().scalars().all()
 
     @staticmethod
-    async def delete(
-        session: AsyncSession, id: int, order: Optional[Order] = None
-    ) -> None:
-        if order:
-            await session.delete(order)
-        else:
-            stmt = sql.delete(Order).where(Order.id == id)
-            await session.execute(stmt)
-
-    @staticmethod
     async def update(
         session: AsyncSession,
         updated_data: Dict,
@@ -151,6 +141,16 @@ class OrderRepo:
                 orderPet = dictToModel(petId, OrderPet())
                 order.pet_ids.append(orderPet)
         return order
+
+    @staticmethod
+    async def delete(
+        session: AsyncSession, id: int, order: Optional[Order] = None
+    ) -> None:
+        if order:
+            await session.delete(order)
+        else:
+            stmt = sql.delete(Order).where(Order.id == id)
+            await session.execute(stmt)
 
     @staticmethod
     async def getSelect(session: AsyncSession) -> Select:

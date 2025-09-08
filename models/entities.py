@@ -56,8 +56,3 @@ class Order(Base):
     pets = relationship("Pet", secondary=OrderPet.__table__, lazy="noload")
 
     shipDate = synonym("ship_date")
-
-
-class PetInOrderDict(TypedDict):
-    pet_id: int
-    quantity: int

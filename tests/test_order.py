@@ -69,19 +69,19 @@ async def test_update_order(client, make_orders):
 
 
 @pytest.mark.anyio
-async def test_update_order_pets(client, make_orders):
+async def test_update_order_pets(client, make_pets, make_orders):
     order_id = make_orders[0].id
-    get_res = client.get(f"/api/v3/orders/{order_id}")
-    assert get_res.status_code == 200
-    data = {"petIds": get_res.json()["petIds"]}
-    data["petIds"][0]["quantity"] = 5
+    petIds = [{"petId": make_pets[2].id, "quantity": 5}]
+    data = {"petIds": petIds}
     put_res = client.put(f"/api/v3/orders/{order_id}", json=data)
     assert put_res.status_code == 200
+    assert put_res.json()["petIds"][0]["petId"] == data["petIds"][0]["petId"]
     assert put_res.json()["petIds"][0]["quantity"] == data["petIds"][0]["quantity"]
 
     # Confirm
     get_res = client.get(f"/api/v3/orders/{order_id}")
     assert get_res.status_code == 200
+    assert get_res.json()["petIds"][0]["petId"] == data["petIds"][0]["petId"]
     assert get_res.json()["petIds"][0]["quantity"] == data["petIds"][0]["quantity"]
 
 

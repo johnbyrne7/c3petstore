@@ -4,8 +4,7 @@ from connexion import NoContent
 import logging
 from connexion.exceptions import ServerError
 from marshmallow import ValidationError
-from sqlalchemy import sql
-from sqlalchemy.orm import joinedload
+
 
 from lib.utils import format_errors_return
 from models.entities import Pet, Order
